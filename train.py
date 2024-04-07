@@ -15,6 +15,9 @@ from modules import data_transforms
 import datetime
 import logging
 
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 logging.basicConfig(filename=f"logs/{timestamp}.txt", filemode='a',level=logging.INFO)
 
@@ -140,6 +143,10 @@ if __name__ == "__main__":
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=opt.lr)
+    
+    # Create save model path
+    if (not os.path.exists(opt.save_model_path)):
+        os.makedirs(opt.save_model_path)
     
     print("Training model")
     model, (loss_hist, acc_hist) = train_model(model, criterion, optimizer, num_epochs=opt.epochs, save_model_path=opt.save_model_path)
