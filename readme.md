@@ -46,7 +46,7 @@ optional arguments:
 ```
 
 # Results
-* Model was trained for 30 epochs with a batch size of 512
+* Model was trained for 30 epochs with a batch size of 256
 * Training accuracy: 74.76%
 * Validation accuracy: 73.20%
 * Training loss: 0.5034
