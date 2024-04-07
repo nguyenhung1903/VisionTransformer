@@ -34,8 +34,12 @@ def validate_model(model, criterion):
 
     print('[VALIDATE] Loss: {:.4f} Val Acc: {:.4f}'.format(epoch_loss, epoch_acc))
     
+    return epoch_acc, epoch_loss
+    
 
-def train_model(model, criterion, optimizer, num_epochs=25):
+def train_model(model, criterion, optimizer, num_epochs=25, save_model_path=None):
+    loss_hist = {'train': [], 'val': []}
+    acc_hist = {'train': [], 'val': []}
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -64,9 +68,17 @@ def train_model(model, criterion, optimizer, num_epochs=25):
 
         epoch_loss = running_loss / dataset_sizes['train']
         epoch_acc = running_corrects.double() / dataset_sizes['train']
-
+        
+        loss_hist['train'].append(epoch_loss)
+        acc_hist['train'].append(epoch_acc)
         print('[TRAINING] Loss: {:.4f} Acc: {:.4f}'.format(epoch_loss, epoch_acc))
-        validate_model(model, criterion)
+        valid_epoch_acc, valid_epoch_loss = validate_model(model, criterion)
+        loss_hist['val'].append(valid_epoch_loss)
+        acc_hist['val'].append(valid_epoch_acc)
+        
+        if valid_epoch_acc > torch.tensor(acc_hist['val']).max():
+            print("Saving best model")
+            torch.save(model.state_dict(), save_model_path)
         
     return model
 
@@ -78,10 +90,12 @@ if __name__ == "__main__":
     args.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     args.add_argument("--data_dir", type=str, default="./data", help="Data directory")
     args.add_argument("--pretrain_model_path", type=str, default="./saved_model/best.pth", help="Model path")
-    args.add_argument("--save_model_path", type=str, default="./saved_model/model.pth", help="Model path")
+    args.add_argument("--save_model_path", type=str, default="./saved_model", help="Model path")
     args.add_argument("--ratio", type=float, default=0.8, help="Train/Validation ratio")
     
     opt = args.parse_args()
+    print(opt)
+    
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ViT(**ViT_config).to(device)
@@ -111,11 +125,10 @@ if __name__ == "__main__":
     
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr)
     
     print("Training model")
-    model = train_model(model, criterion, optimizer, num_epochs=opt.epochs)
+    model = train_model(model, criterion, optimizer, num_epochs=opt.epochs, save_model_path=f"{opt.save_model_path}/best.pth")
     
     print("Saving model")
-    torch.save(model.state_dict(), opt.save_model_path)
+    torch.save(model.state_dict(), f"{opt.save_model_path}/last.pth")
